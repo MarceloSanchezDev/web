@@ -1,0 +1,19 @@
+{
+  "name": "portafolio-back",
+  "version": "1.0.0",
+  "description": "backend del portafolio",
+  "main": "app.js",
+  "scripts": {
+    "dev": "node --watch app.js"
+  },
+  "keywords": [
+    "backend",
+    "node",
+    "express"
+  ],
+  "author": "Marcelo Sanchez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

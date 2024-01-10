@@ -1,0 +1,35 @@
+{
+    "Nombre" : "Marcelo",
+    "Apellido": "Sánchez",
+    "Estudios" : {
+        "Cursos" : {
+            "Frontend": "Frontend Developer",
+            "Responsive": "Responsive Desing",
+            "React" : "React.js"
+        },
+        "Universidad": "Universidad Nacional de Hurlingham"        
+    },
+    "Servicios":{
+        "LandingPages" : {
+            "nombre" : "Landing Pages",
+            "info":"¿Buscas una poderosa herramienta para captar la atención de tus clientes potenciales? ¡Yo puedo ayudarte! Ofrezco un servicio personalizado de creación de Landing Pages diseñadas para convertir visitantes en clientes. Con un enfoque centrado en la experiencia del usuario y la conversión, trabajo contigo para desarrollar páginas web atractivas y efectivas que se alineen con tus objetivos comerciales. Utilizando mis habilidades en diseño y desarrollo web, creo Landing Pages optimizadas para dispositivos móviles, visualmente impactantes y personalizadas para tu marca. Mi servicio no se limita a la creación de páginas web; también me aseguro de que estén integradas con las herramientas de análisis adecuadas y optimizadas para los motores de búsqueda, lo que garantiza su visibilidad y eficacia en la generación de clientes potenciales.",
+            "img" : "https://www.oleoshop.com/imagenes/poridentidad?identidad=a61455d8-a888-4da6-88d3-0293b5539f34&ancho=850&alto="
+            },
+        "DiseñoResponsivo" :{
+            "nombre" : "Diseño Responsivo",
+            "info": "Ofrezco servicios de diseño y desarrollo web que no solo se centran en la estética, sino en los resultados. Mi enfoque en la experiencia del usuario garantiza que cada sitio web que creo sea visualmente atractivo, fácil de navegar y efectivo en la conversión de visitantes en clientes potenciales. Trabajo mano a mano con mis clientes para entender sus necesidades específicas y proporcionar soluciones personalizadas que se adapten a su visión y objetivos comerciales. Desde el diseño responsivo hasta la optimización del rendimiento, estoy comprometido a entregar resultados excepcionales y mantener una relación colaborativa a largo plazo.",
+            "img": "https://www.searchenginejournal.com/wp-content/uploads/2021/10/responsive-web-design-1-61f01c4b64c5f-sej-760x400.webp"
+
+        },
+        "Soporte" :{
+            "nombre" : "Soporte",
+                "info":"Mi compromiso no termina con el lanzamiento de su sitio web. Ofrezco personalmente servicios de mantenimiento y soporte continuo para garantizar que su presencia en línea funcione sin problemas y esté siempre protegida. Desde actualizaciones periódicas hasta monitoreo constante y resolución de problemas, me aseguro de que su sitio esté actualizado, seguro y funcionando de manera óptima en todo momento. Mi objetivo es brindarle la tranquilidad de saber que su inversión en línea está protegida y evoluciona con las últimas tecnologías, permitiéndole enfocarse en hacer crecer su negocio.",
+                "img": "https://visiontecnologica.com.ar//wp-content/uploads/2023/06/sop-1.png"
+        }
+    },
+    "Contacto":{
+        "email":"marcerdagrdosanchez@gmail.com",
+        "telefono": "11-5220-1027"
+    }
+
+}
