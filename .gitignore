@@ -1,0 +1,4 @@
+/.env.example
+/.evn
+/dist
+/node_modules
