@@ -8,10 +8,10 @@
 4. En **Settings → Environment Variables**, definir para Production y Preview:
 
    ```
-   VITE_API_URL=https://TU-BACKEND.vercel.app
+   VITE_API_URL=https://backend-ios-nu.vercel.app
    ```
 
-   `VITE_API_URL` es una URL pública: se incorpora al JavaScript del navegador. No colocar secretos en esa variable.
+   `VITE_API_URL` es una URL pública: se incorpora al JavaScript del navegador. No colocar secretos en esa variable. En producción nunca debe ser `/api`, ya que esa ruta pertenece a la SPA y los `POST` de autenticación responderán `405`.
 5. Desplegar. El archivo `vercel.json` permite abrir directamente cualquier ruta de la SPA.
 
 ## API
@@ -21,7 +21,7 @@ La API se despliega como un proyecto separado, con **Root Directory** `backend`.
 ```text
 DATABASE_URL=<PostgreSQL productivo>
 JWT_SECRET=<secreto aleatorio de al menos 32 caracteres>
-CORS_ORIGINS=https://TU-FRONTEND.vercel.app
+CORS_ORIGINS=https://web-mauve-kappa-63.vercel.app
 NODE_ENV=production
 ```
 

@@ -3,7 +3,12 @@ import { createRoot } from 'react-dom/client';
 import '../styles.css';
 import { AccountWorkspace, PlayerWorkspace, StaffWorkspace, TeamWorkspace } from './operations.jsx';
 
-const API = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+// En local usamos el proxy de Vite. En producción nunca debe apuntar a /api,
+// porque la SPA se sirve desde ese mismo dominio y respondería 405 al hacer POST.
+const configuredApi = import.meta.env.VITE_API_URL;
+const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api'))
+  ? 'https://backend-ios-nu.vercel.app'
+  : (configuredApi || '/api')).replace(/\/$/, '');
 const SESSION = 'basketstaff.session';
 const role = { DIRECTOR: 'Director', COACH: 'Entrenador', MONITOR: 'Monitor' };
 const initials = (name = '') => name.split(/\s+/).map(x => x[0]).slice(0, 2).join('').toUpperCase();
