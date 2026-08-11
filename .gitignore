@@ -1,4 +1,6 @@
 /.env.example
+/.env
+/.env.local
 /.evn
 /dist
 /node_modules
