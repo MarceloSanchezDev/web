@@ -15,12 +15,33 @@ const initials = (name = '') => name.split(/\s+/).map(x => x[0]).slice(0, 2).joi
 const age = date => { const d = new Date(date), n = new Date(); return n.getFullYear() - d.getFullYear() - (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())); };
 function Icon({ children, filled = false }) { return <span className={`material-symbols-rounded${filled ? ' icon-filled' : ''}`}>{children}</span>; }
 
+function currentRoute() {
+  const parts = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean).map(decodeURIComponent);
+  const [page = 'inicio', id, tab] = parts;
+  return { page, id, tab };
+}
+
+function useRoute() {
+  const [route, setRoute] = useState(currentRoute);
+  useEffect(() => {
+    const update = () => setRoute(currentRoute());
+    window.addEventListener('popstate', update);
+    return () => window.removeEventListener('popstate', update);
+  }, []);
+  const navigate = path => {
+    const next = path.startsWith('/') ? path : `/${path}`;
+    if (next !== window.location.pathname) window.history.pushState({}, '', next);
+    setRoute(currentRoute());
+  };
+  return { route, navigate };
+}
+
 function App() {
   const [session, setSession] = useState(() => JSON.parse(localStorage.getItem(SESSION) || 'null'));
-  const [page, setPage] = useState('inicio');
+  const { route, navigate } = useRoute();
   const [toast, setToast] = useState('');
   const save = data => { localStorage.setItem(SESSION, JSON.stringify(data)); setSession(data); };
-  const logout = () => { localStorage.removeItem(SESSION); setSession(null); setPage('inicio'); };
+  const logout = () => { localStorage.removeItem(SESSION); setSession(null); navigate('/'); };
   const notify = text => { setToast(text); setTimeout(() => setToast(''), 3000); };
   async function api(path, options = {}, retry = true) {
     const headers = { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
@@ -37,10 +58,12 @@ function App() {
   }
   if (!session) return <><Auth api={api} save={save} /><Toast text={toast} /></>;
   const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: session.refreshToken }) }); } finally { logout(); } };
-  return <><Shell user={session.user} page={page} setPage={setPage} logout={handleSignOut}>
+  const page = route.page === 'inicio' ? 'inicio' : route.page;
+  const pagePath = key => key === 'inicio' ? '/' : `/${key}`;
+  return <><Shell user={session.user} page={page} setPage={key => navigate(pagePath(key))} logout={handleSignOut}>
     {page === 'inicio' && <Home api={api} user={session.user} />}
-    {page === 'equipos' && <TeamWorkspace api={api} director={session.user.role === 'DIRECTOR'} notify={notify} />}
-    {page === 'jugadores' && <PlayerWorkspace api={api} notify={notify} />}
+    {page === 'equipos' && <TeamWorkspace api={api} director={session.user.role === 'DIRECTOR'} notify={notify} teamId={route.id} tab={route.tab} navigate={navigate} />}
+    {page === 'jugadores' && <PlayerWorkspace api={api} notify={notify} playerId={route.id} tab={route.tab} navigate={navigate} />}
     {page === 'personal' && <StaffWorkspace api={api} notify={notify} />}
     {page === 'actividad' && <Directory api={api} kind="activity" />}
     {page === 'perfil' && <AccountWorkspace api={api} user={session.user} signOut={logout} />}
