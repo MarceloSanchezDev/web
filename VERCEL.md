@@ -21,7 +21,7 @@ La API se despliega como un proyecto separado, con **Root Directory** `backend`.
 ```text
 DATABASE_URL=<PostgreSQL productivo>
 JWT_SECRET=<secreto aleatorio de al menos 32 caracteres>
-CORS_ORIGINS=https://web-mauve-kappa-63.vercel.app
+CORS_ORIGINS=https://web-mauve-kappa-63.vercel.app,https://localhost
 NODE_ENV=production
 ```
 
