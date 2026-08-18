@@ -134,7 +134,7 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 /* Formularios como páginas: sin diálogos flotantes ni superposición con la vista anterior. */
 .form-page.modal-backdrop {
   display:block;
-  overflow-y:auto;
+  
   padding:clamp(20px, 5vw, 56px);
   background:var(--surface);
   backdrop-filter:none;
