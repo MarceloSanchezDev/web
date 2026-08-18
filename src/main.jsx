@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../styles.css';
 import { AccountWorkspace, PlayerWorkspace, StaffWorkspace, TeamWorkspace } from './operations.jsx';
+import LineWaves from './LineWaves.jsx';
 
 // En local usamos el proxy de Vite. En producción nunca debe apuntar a /api,
 // porque la SPA se sirve desde ese mismo dominio y respondería 405 al hacer POST.
@@ -56,11 +57,11 @@ function App() {
     if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || 'Ocurrió un error.'); }
     return response.status === 204 ? null : response.json();
   }
-  if (!session) return <><Auth api={api} save={save} /><Toast text={toast} /></>;
+  if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} /><Toast text={toast} /></>;
   const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: session.refreshToken }) }); } finally { logout(); } };
   const page = route.page === 'inicio' ? 'inicio' : route.page;
   const pagePath = key => key === 'inicio' ? '/' : `/${key}`;
-  return <><Shell user={session.user} page={page} setPage={key => navigate(pagePath(key))} logout={handleSignOut}>
+  return <><div className="app-line-waves"><LineWaves /></div><Shell user={session.user} page={page} setPage={key => navigate(pagePath(key))} logout={handleSignOut}>
     {page === 'inicio' && <Home api={api} user={session.user} />}
     {page === 'equipos' && <TeamWorkspace api={api} director={['DIRECTOR', 'SUBDIRECTOR'].includes(session.user.role)} readOnly={session.user.role === 'MONITOR'} notify={notify} teamId={route.id} tab={route.tab} navigate={navigate} />}
     {page === 'jugadores' && <PlayerWorkspace api={api} readOnly={session.user.role === 'MONITOR'} notify={notify} playerId={route.id} tab={route.tab} navigate={navigate} />}
