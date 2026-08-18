@@ -215,3 +215,10 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 .app-shell,.main,.auth-shell { background:transparent; }
 .sidebar { background:color-mix(in srgb,var(--card) 94%,transparent); }
 @media (prefers-reduced-motion:reduce) { .line-waves-container { opacity:.16; background:linear-gradient(135deg,#00164E 0%,#062467 52%,#00164E 100%); } }
+
+/* Tarjetas de equipo compactas, con toda la información en una misma fila. */
+.team-card { flex-direction:row; align-items:center; min-height:112px; }
+.team-card .team-mark { flex:0 0 auto; }
+.team-card > div:not(.team-mark) { flex:1; min-width:0; }
+.team-card footer { flex:0 0 auto; margin:0 0 0 auto; white-space:nowrap; }
+@media (max-width:420px) { .team-card { min-height:104px; padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal; text-align:right; line-height:1.25; } }
