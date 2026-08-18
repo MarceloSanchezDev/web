@@ -222,3 +222,5 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 .team-card > div:not(.team-mark) { flex:1; min-width:0; }
 .team-card footer { flex:0 0 auto; margin:0 0 0 auto; white-space:nowrap; }
 @media (max-width:420px) { .team-card { min-height:104px; padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal; text-align:right; line-height:1.25; } }
+
+.date-badge,.date-badge b { color:#fff; }
