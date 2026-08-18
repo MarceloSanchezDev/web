@@ -11,7 +11,33 @@ function useLoad(load, deps = []) {
   useEffect(() => { void refresh(); }, deps);
   return { data, error, loading, refresh };
 }
-function Modal({ title, close, children }) { return <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && close()}><section className="card modal modal-wide"><div className="modal-head"><h2>{title}</h2><button className="icon-close" onClick={close}><Icon>close</Icon></button></div>{children}</section></div>; }
+const formSlug = title => title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+function useFormPage(title, close) {
+  const slug = formSlug(title);
+  useEffect(() => {
+    const current = new URL(window.location.href);
+    if (current.searchParams.get('form') === slug) return;
+    const returnTo = `${current.pathname}${current.search}${current.hash}`;
+    current.searchParams.set('form', slug);
+    window.history.pushState({ basketstaffForm: slug, basketstaffReturnTo: returnTo }, '', current);
+    const handleBack = () => {
+      if (new URL(window.location.href).searchParams.get('form') !== slug) close();
+    };
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
+  }, []);
+  return () => {
+    const state = window.history.state;
+    if (state?.basketstaffForm === slug && state.basketstaffReturnTo) window.history.replaceState({}, '', state.basketstaffReturnTo);
+    close();
+  };
+}
+
+function Modal({ title, close, children }) {
+  const dismiss = useFormPage(title, close);
+  return <div className="modal-backdrop form-page" onMouseDown={event => event.target === event.currentTarget && dismiss()}><section className="card modal modal-wide"><div className="modal-head"><div><span className="eyebrow">BASKETSTAFF</span><h2>{title}</h2></div><button className="icon-close" aria-label="Volver" onClick={dismiss}><Icon>arrow_back</Icon></button></div>{children}</section></div>;
+}
 function Error({ text }) { return <p className="error">{text}</p>; }
 function Loading() { return <div className="loading">Cargando…</div>; }
 function Button({ children, ...props }) { return <button className="secondary" {...props}>{children}</button>; }
