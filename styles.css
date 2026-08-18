@@ -224,3 +224,5 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 @media (max-width:420px) { .team-card { min-height:104px; padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal; text-align:right; line-height:1.25; } }
 
 .date-badge,.date-badge b { color:#fff; }
+
+.agenda-group { display:grid; gap:2px; }.agenda-group-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; padding:12px 0; border-bottom:1px solid var(--border); }.agenda-group-head .eyebrow { display:flex; align-items:center; gap:6px; }.agenda-group-head strong { display:grid; place-items:center; min-width:28px; height:28px; padding:0 8px; border-radius:14px; color:var(--accent); background:var(--blue-soft); font-size:13px; }.agenda-empty { margin:0; padding:16px 0; color:var(--muted); font-size:14px; }
