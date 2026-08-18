@@ -115,3 +115,18 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 .evolution-card { display:grid; gap:12px; }.score-chart { height:110px; display:flex; align-items:end; gap:8px; padding:8px 2px 0; border-bottom:1px solid var(--border); }.score-chart span { flex:1; min-width:9px; border-radius:6px 6px 0 0; background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--card))); }.evolution-card small { color:var(--muted); }
 .progress-record { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:14px; }.progress-record > div:first-child { display:grid; gap:4px; }.progress-record p { margin:2px 0; }.progress-record small { color:var(--muted); }.progress-record > b { color:var(--accent); font-size:21px; }.progress-record > div:last-child { white-space:nowrap; }
 @media(max-width:720px) { .progress-overview { grid-template-columns:1fr; }.progress-quick-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); } }@media(max-width:520px) { .progress-summary { align-items:flex-start; gap:14px; }.score-ring { flex-basis:74px; width:74px; height:74px; }.score-ring strong { font-size:19px; }.progress-metrics { gap:8px; }.progress-metric { min-height:82px; padding:12px; }.progress-record { grid-template-columns:1fr auto; }.progress-record > div:last-child { grid-column:1/-1; }.skills-card > div { font-size:13px; } }
+
+/* Movimiento breve y funcional, inspirado en las transiciones de iOS. */
+@keyframes rise-in { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes sheet-in { from { opacity:0; transform:translateY(18px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes toast-in { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.page-head,.dashboard-header,.detail-page,.feature-page { animation:rise-in .32s cubic-bezier(.2,.8,.2,1) both; }
+.grid>.card,.list>.card,.feature-link { animation:rise-in .36s cubic-bezier(.2,.8,.2,1) both; }
+.grid>.card:nth-child(2),.list>.card:nth-child(2),.feature-link:nth-child(2) { animation-delay:.035s; }.grid>.card:nth-child(3),.list>.card:nth-child(3),.feature-link:nth-child(3) { animation-delay:.07s; }.grid>.card:nth-child(4),.list>.card:nth-child(4),.feature-link:nth-child(4) { animation-delay:.105s; }.grid>.card:nth-child(5),.list>.card:nth-child(5),.feature-link:nth-child(5) { animation-delay:.14s; }
+.feature-link,.interactive-card,.selectable,.list-row.selectable,.progress-metric { transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease,background .2s ease; }
+.feature-link:hover,.interactive-card:hover,.selectable:hover,.list-row.selectable:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgb(15 23 42 / .1); }
+.feature-link:active,.interactive-card:active,.selectable:active,.list-row.selectable:active,.secondary:active,.primary:active { transform:scale(.98); }
+.modal { animation:sheet-in .28s cubic-bezier(.2,.8,.2,1) both; }.toast { animation:toast-in .26s cubic-bezier(.2,.8,.2,1) both; }
+.score-ring { transition:background .45s cubic-bezier(.2,.8,.2,1),transform .25s ease; }.score-ring:hover { transform:scale(1.04); }
+.progress-metric:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgb(15 23 42 / .08); }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; } }

@@ -64,7 +64,7 @@ function App() {
     {page === 'inicio' && <Home api={api} user={session.user} />}
     {page === 'equipos' && <TeamWorkspace api={api} director={['DIRECTOR', 'SUBDIRECTOR'].includes(session.user.role)} readOnly={session.user.role === 'MONITOR'} notify={notify} teamId={route.id} tab={route.tab} navigate={navigate} />}
     {page === 'jugadores' && <PlayerWorkspace api={api} readOnly={session.user.role === 'MONITOR'} notify={notify} playerId={route.id} tab={route.tab} navigate={navigate} />}
-    {page === 'personal' && <StaffWorkspace api={api} notify={notify} canInvite={session.user.role === 'DIRECTOR'} />}
+    {page === 'personal' && <StaffWorkspace api={api} notify={notify} canInvite={session.user.role === 'DIRECTOR'} currentUserId={session.user.id} />}
     {page === 'actividad' && <Directory api={api} kind="activity" />}
     {page === 'perfil' && <AccountWorkspace api={api} user={session.user} signOut={logout} />}
   </Shell><Toast text={toast} /></>;
