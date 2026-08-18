@@ -39,7 +39,7 @@ function Modal({ title, close, children }) {
   return <div className="modal-backdrop form-page" onMouseDown={event => event.target === event.currentTarget && dismiss()}><section className="card modal modal-wide"><div className="modal-head"><div><span className="eyebrow">BASKETSTAFF</span><h2>{title}</h2></div><button className="icon-close" aria-label="Volver" onClick={dismiss}><Icon>arrow_back</Icon></button></div>{children}</section></div>;
 }
 function Error({ text }) { return <p className="error">{text}</p>; }
-function Loading() { return <div className="loading">Cargando…</div>; }
+function Loading({ rows = 4 }) { return <section className="skeleton-page" aria-busy="true" aria-label="Cargando contenido"><div className="skeleton skeleton-kicker" /><div className="skeleton skeleton-title" /><div className="skeleton skeleton-subtitle" /><div className="skeleton-list">{Array.from({ length: rows }, (_, index) => <div className="card skeleton-card" key={index}><div className="skeleton skeleton-avatar" /><div className="skeleton-card-copy"><div className="skeleton skeleton-line skeleton-line-long" /><div className="skeleton skeleton-line skeleton-line-short" /></div></div>)}</div><span className="sr-only">Cargando contenido</span></section>; }
 function Button({ children, ...props }) { return <button className="secondary" {...props}>{children}</button>; }
 function Field({ label, children }) { return <label className="field"><span className="eyebrow">{label}</span><span className="input-wrap">{children}</span></label>; }
 
