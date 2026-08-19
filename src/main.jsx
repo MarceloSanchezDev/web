@@ -4,11 +4,9 @@ import '../styles.css';
 import { AccountWorkspace, PlayerWorkspace, StaffWorkspace, TeamWorkspace } from './operations.jsx';
 import LineWaves from './LineWaves.jsx';
 
-// En local usamos el proxy de Vite. En producción nunca debe apuntar a /api,
-// porque la SPA se sirve desde ese mismo dominio y respondería 405 al hacer POST.
 const configuredApi = import.meta.env.VITE_API_URL;
-const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api'))
-  ? 'https://backend-ios-nu.vercel.app'
+const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api' || configuredApi === 'https://backend-ios-nu.vercel.app'))
+  ? '/api'
   : (configuredApi || '/api')).replace(/\/$/, '');
 const SESSION = 'basketstaff.session';
 const role = { DIRECTOR: 'Director', SUBDIRECTOR: 'Subdirector', COACH: 'Entrenador', MONITOR: 'Monitor' };
@@ -38,27 +36,48 @@ function useRoute() {
 }
 
 function App() {
-  const [session, setSession] = useState(() => JSON.parse(localStorage.getItem(SESSION) || 'null'));
+  const [session, setSession] = useState(undefined);
   const { route, navigate } = useRoute();
   const [toast, setToast] = useState('');
-  const save = data => { localStorage.setItem(SESSION, JSON.stringify(data)); setSession(data); };
+  const save = data => { localStorage.removeItem(SESSION); setSession(data); };
   const logout = () => { localStorage.removeItem(SESSION); setSession(null); navigate('/'); };
   const notify = text => { setToast(text); setTimeout(() => setToast(''), 3000); };
+  useEffect(() => {
+    let active = true;
+    let legacyRefreshToken;
+    try { legacyRefreshToken = JSON.parse(localStorage.getItem(SESSION) || 'null')?.refreshToken; } catch { /* sesión antigua inválida */ }
+    localStorage.removeItem(SESSION);
+    fetch(`${API}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'web' },
+      body: JSON.stringify(legacyRefreshToken ? { refreshToken: legacyRefreshToken } : {})
+    }).then(async response => response.ok ? response.json() : null)
+      .then(data => { if (active) setSession(data); })
+      .catch(() => { if (active) setSession(null); });
+    return () => { active = false; };
+  }, []);
   async function api(path, options = {}, retry = true) {
-    const headers = { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
+    const headers = { Accept: 'application/json', 'X-Client-Platform': 'web', ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
     if (session?.token) headers.Authorization = `Bearer ${session.token}`;
     let response;
-    try { response = await fetch(`${API}${path}`, { ...options, headers }); } catch { throw new Error('No se pudo conectar con la API. Revisá la URL configurada.'); }
-    if (response.status === 401 && retry && session?.refreshToken) {
-      const refresh = await fetch(`${API}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: session.refreshToken }) });
-      if (refresh.ok) { const next = await refresh.json(); save(next); return api(path, options, false); }
-      logout(); throw new Error('Tu sesión venció. Iniciá sesión nuevamente.');
+    try { response = await fetch(`${API}${path}`, { ...options, credentials: 'include', headers }); } catch { throw new Error('No se pudo conectar con la API. Revisá la URL configurada.'); }
+    if (response.status === 401 && retry && session) {
+      const refresh = await fetch(`${API}/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'web' }, body: '{}' });
+      if (refresh.ok) {
+        const next = await refresh.json();
+        save(next);
+        response = await fetch(`${API}${path}`, { ...options, credentials: 'include', headers: { ...headers, Authorization: `Bearer ${next.token}` } });
+      } else {
+        logout(); throw new Error('Tu sesión venció. Iniciá sesión nuevamente.');
+      }
     }
     if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || 'Ocurrió un error.'); }
     return response.status === 204 ? null : response.json();
   }
+  if (session === undefined) return <><div className="app-line-waves"><LineWaves /></div><Loading /></>;
   if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} /><Toast text={toast} /></>;
-  const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: session.refreshToken }) }); } finally { logout(); } };
+  const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: '{}' }); } finally { logout(); } };
   const page = route.page === 'inicio' ? 'inicio' : route.page;
   const pagePath = key => key === 'inicio' ? '/' : `/${key}`;
   return <><div className="app-line-waves"><LineWaves /></div><Shell user={session.user} page={page} setPage={key => navigate(pagePath(key))} logout={handleSignOut}>

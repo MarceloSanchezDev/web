@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { safeCsvCell } from './security.js';
 
 const Icon = ({ children }) => <span className="material-symbols-rounded">{children}</span>;
 const dateInput = value => value ? new Date(value).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -126,7 +127,7 @@ function Roster({ api, team, notify, navigate }) {
   const { data: players, error, refresh } = useLoad(() => api('/players'));
   const [creating, setCreating] = useState(false); const [importing, setImporting] = useState(false);
   if (!players) return <Loading />; const roster = players.filter(player => player.teams.some(item => item.teamId === team.id));
-  function exportCsv() { const lines = [['Nombre', 'Nacimiento'], ...roster.map(p => [p.name, p.birthDate])].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\r\n'); const url = URL.createObjectURL(new Blob([`\uFEFF${lines}`], { type: 'text/csv' })); const link = document.createElement('a'); link.href = url; link.download = `plantel-${team.name.toLowerCase().replaceAll(' ', '-')}.csv`; link.click(); URL.revokeObjectURL(url); }
+  function exportCsv() { const lines = [['Nombre', 'Nacimiento'], ...roster.map(p => [p.name, p.birthDate])].map(row => row.map(safeCsvCell).join(',')).join('\r\n'); const url = URL.createObjectURL(new Blob([`\uFEFF${lines}`], { type: 'text/csv' })); const link = document.createElement('a'); link.href = url; link.download = `plantel-${team.name.toLowerCase().replaceAll(' ', '-')}.csv`; link.click(); URL.revokeObjectURL(url); }
   return <div className="stack"><div className="toolbar"><Button onClick={() => setCreating(true)}><Icon>person_add</Icon> Jugador</Button><Button onClick={() => setImporting(true)}><Icon>upload_file</Icon> Importar CSV</Button><Button onClick={exportCsv}><Icon>download</Icon> CSV</Button></div>{error && <Error text={error} />}{roster.map(player => <button className="list-row selectable" key={player.id} onClick={() => navigate(`/jugadores/${player.id}`)}><span className="avatar">{initials(player.name)}</span><span><strong>{player.name}</strong><small>{player.birthDate}</small></span><Icon>chevron_right</Icon></button>)}{!roster.length && <div className="empty">No hay jugadores en este equipo.</div>}{creating && <PlayerEditor api={api} team={team} close={() => setCreating(false)} done={() => { setCreating(false); refresh(); notify('Jugador creado'); }} />}{importing && <ImportPlayers api={api} team={team} close={() => setImporting(false)} done={() => { setImporting(false); refresh(); notify('Importación completada'); }} />}</div>;
 }
 
