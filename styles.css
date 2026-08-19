@@ -238,7 +238,7 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 @media(max-width:720px) {
   .mobile-user-menu { display:block; position:relative; }
   .mobile-avatar-button { border:0; cursor:pointer; padding:0; }
-  .mobile-user-dropdown { position:fixed; top:64px; right:12px; left:auto; z-index:8; display:grid; gap:8px; min-width:174px; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:0 12px 30px rgb(0 0 0 /.2); }
+  .mobile-user-dropdown { position:fixed; top:8px; right:8px; left:auto; z-index:8; display:grid; gap:8px; min-width:174px; padding:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:0 12px 30px rgb(0 0 0 /.2); }
   .mobile-user-name { padding:4px 10px; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mobile-user-dropdown button { display:flex; align-items:center; gap:8px; width:100%; border:0; border-radius:10px; background:transparent; color:var(--text); padding:10px; text-align:left; font-size:14px; font-weight:650; }
   .mobile-user-dropdown button:hover { background:var(--surface-low); }
