@@ -198,18 +198,8 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 
 /* Componentes de interacción y movimiento suave, basados en los patrones de React Bits. */
 .animated-content { animation:rise-in .34s cubic-bezier(.2,.8,.2,1) both; }
-.animated-list > * { animation:rise-in .34s cubic-bezier(.2,.8,.2,1) both; }
-.animated-list > *:nth-child(2) { animation-delay:.04s; }.animated-list > *:nth-child(3) { animation-delay:.08s; }.animated-list > *:nth-child(4) { animation-delay:.12s; }.animated-list > *:nth-child(5) { animation-delay:.16s; }.animated-list > *:nth-child(n+6) { animation-delay:.2s; }
 .accordion-list { display:grid; gap:10px; }.accordion { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--surface-low); transition:border-color .2s ease,background .2s ease; }.accordion.open { border-color:color-mix(in srgb,var(--accent) 36%,var(--border)); background:var(--card); }.accordion-trigger { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:54px; padding:14px 16px; border:0; color:var(--text); background:transparent; text-align:left; font:inherit; font-weight:700; }.accordion-trigger .material-symbols-rounded { color:var(--accent); transition:transform .2s ease; }.accordion-panel { padding:0 16px 16px; color:var(--text); animation:rise-in .2s ease both; }.accordion-panel p { margin:0; white-space:pre-wrap; color:var(--muted); line-height:1.55; }
 @media (max-width:720px) { .accordion-trigger { min-height:52px; padding:13px 14px; }.accordion-panel { padding:0 14px 14px; } }
-
-/* Glare Hover: reflejo sutil para todas las superficies de tarjeta. */
-.card { position:relative; isolation:isolate;  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease; }
-.card::after { content:""; position:absolute; z-index:0; inset:-70% -45%; pointer-events:none; opacity:0; transform:translateX(-42%) rotate(18deg); background:linear-gradient(90deg,transparent 36%,rgb(255 255 255 / .36) 50%,transparent 64%); transition:opacity .22s ease,transform .55s cubic-bezier(.2,.8,.2,1); }
-.card > * { position:relative; z-index:1; }
-@media (hover:hover) and (pointer:fine) { .card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 28%,var(--border)); box-shadow:0 12px 28px rgb(0 8 36 / .16); }.card:hover::after { opacity:1; transform:translateX(42%) rotate(18deg); } }
-@media (prefers-color-scheme:dark) { .card::after { background:linear-gradient(90deg,transparent 36%,rgb(255 255 255 / .12) 50%,transparent 64%); } }
-@media (prefers-reduced-motion:reduce) { .card,.card::after { transition:none; } }
 
 /* El indicador de navegación siempre queda alineado al final de la fila. */
 .list-row > .material-symbols-rounded:last-child { flex:0 0 auto; margin-left:auto; }

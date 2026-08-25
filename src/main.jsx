@@ -30,9 +30,9 @@ function useRoute() {
     window.addEventListener('popstate', update);
     return () => window.removeEventListener('popstate', update);
   }, []);
-  const navigate = path => {
+  const navigate = (path, { replace = false } = {}) => {
     const next = path.startsWith('/') ? path : `/${path}`;
-    if (next !== window.location.pathname) window.history.pushState({}, '', next);
+    if (next !== window.location.pathname) window.history[replace ? 'replaceState' : 'pushState']({}, '', next);
     setRoute(currentRoute());
   };
   return { route, navigate };
@@ -43,7 +43,7 @@ function App() {
   const { route, navigate } = useRoute();
   const [toast, setToast] = useState('');
   const save = data => { localStorage.removeItem(SESSION); setSession(data); };
-  const logout = () => { localStorage.removeItem(SESSION); setSession(null); navigate('/'); };
+  const logout = () => { localStorage.removeItem(SESSION); setSession(null); navigate('/login', { replace: true }); };
   const notify = text => { setToast(text); setTimeout(() => setToast(''), 3000); };
   useEffect(() => {
     let active = true;
@@ -60,6 +60,9 @@ function App() {
       .catch(() => { if (active) setSession(null); });
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    if (session && ['login', 'register'].includes(route.page)) navigate('/', { replace: true });
+  }, [session, route.page]);
   async function api(path, options = {}, retry = true) {
     const headers = { Accept: 'application/json', 'X-Client-Platform': 'web', ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
     if (session?.token) headers.Authorization = `Bearer ${session.token}`;
@@ -85,7 +88,7 @@ function App() {
     return response.status === 204 ? null : response.json();
   }
   if (session === undefined) return <><div className="app-line-waves"><LineWaves /></div><Loading /></>;
-  if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} /><Toast text={toast} /></>;
+  if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} register={route.page === 'register'} navigate={navigate} /><Toast text={toast} /></>;
   const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: '{}' }); } finally { logout(); } };
   const page = route.page === 'inicio' ? 'inicio' : route.page;
   const pagePath = key => key === 'inicio' ? '/' : `/${key}`;
@@ -99,8 +102,8 @@ function App() {
   </Shell><Toast text={toast} /></>;
 }
 
-function Auth({ api, save }) {
-  const [register, setRegister] = useState(false), [error, setError] = useState(''), [busy, setBusy] = useState(false), [modal, setModal] = useState('');
+function Auth({ api, save, register, navigate }) {
+  const [error, setError] = useState(''), [busy, setBusy] = useState(false), [modal, setModal] = useState('');
   async function submit(event) {
     event.preventDefault();
     if (busy) return;
@@ -108,13 +111,14 @@ function Auth({ api, save }) {
     setError('');
     try {
       save(await api(register ? '/auth/register' : '/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }));
+      navigate('/', { replace: true });
     } catch (err) {
       setError(userFacingAuthError(err, register ? 'register' : 'login'));
     } finally {
       setBusy(false);
     }
   }
-  const changeMode = () => { setRegister(value => !value); setError(''); };
+  const changeMode = () => { setError(''); navigate(register ? '/login' : '/register'); };
   return <main className="auth-shell"><div className="auth-content"><header className="brand-header"><div className="brand-icon"><Icon filled>sports_basketball</Icon></div><h1><StrokeText text={register ? 'Creá tu cuenta' : 'BasketStaff'} /></h1><p className="subtitle">{register ? 'Unite a la comunidad de entrenadores.' : 'Bienvenido de nuevo'}</p></header><form className="card form-card" onSubmit={submit}>{register && <><Field title="NOMBRE COMPLETO"><input required name="name" minLength="2" placeholder="Ej. Carlos Martínez" autoComplete="name" /></Field><Field title="NOMBRE DE LA COMPAÑÍA"><input required name="organizationName" minLength="2" placeholder="Ej. Club Central" autoComplete="organization" /></Field></>}<Field title="CORREO ELECTRÓNICO"><input required type="email" name="email" placeholder="entrenador@equipo.com" autoComplete="email" /></Field><Field title="CONTRASEÑA"><input required minLength="10" type="password" name="password" placeholder="••••••••" autoComplete={register ? 'new-password' : 'current-password'} /></Field>{!register && <button className="link-button" type="button" onClick={() => setModal('recover')}>¿Olvidaste tu contraseña?</button>}{error && <div className="auth-error" role="alert" aria-live="assertive"><Icon>error</Icon><div><strong>{register ? 'No pudimos crear la cuenta' : 'No pudimos iniciar sesión'}</strong><span>{error}</span></div></div>}<button className="primary" disabled={busy} aria-busy={busy}>{busy ? (register ? 'Creando cuenta…' : 'Ingresando…') : (register ? 'Crear cuenta' : 'Iniciar sesión')}</button></form><div className="auth-actions"><button className="link-button" type="button" onClick={changeMode}>{register ? '¿Ya tenés una cuenta? Iniciá sesión' : '¿No tenés una cuenta? Crear cuenta'}</button><button className="link-button" type="button" onClick={() => setModal('invite')}>Tengo una invitación</button></div></div>{modal === 'recover' && <Recover api={api} close={() => setModal('')} />}{modal === 'invite' && <Invite api={api} save={save} close={() => setModal('')} />}</main>;
 }
 
