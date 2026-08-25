@@ -143,9 +143,9 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 .form-page .modal {
   width:min(100%, 960px);
   min-height:calc(100dvh - clamp(40px, 10vw, 112px));
-  max-height:none;
+
   margin:0 auto;
-  overflow:visible;
+
   border-radius:22px;
   box-shadow:0 12px 34px rgb(0 8 36 / .18);
 }
@@ -197,7 +197,7 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 @media (max-width:720px) { .accordion-trigger { min-height:52px; padding:13px 14px; }.accordion-panel { padding:0 14px 14px; } }
 
 /* Glare Hover: reflejo sutil para todas las superficies de tarjeta. */
-.card { position:relative; isolation:isolate; overflow:hidden; transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease; }
+.card { position:relative; isolation:isolate;  transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,border-color .22s ease; }
 .card::after { content:""; position:absolute; z-index:0; inset:-70% -45%; pointer-events:none; opacity:0; transform:translateX(-42%) rotate(18deg); background:linear-gradient(90deg,transparent 36%,rgb(255 255 255 / .36) 50%,transparent 64%); transition:opacity .22s ease,transform .55s cubic-bezier(.2,.8,.2,1); }
 .card > * { position:relative; z-index:1; }
 @media (hover:hover) and (pointer:fine) { .card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--accent) 28%,var(--border)); box-shadow:0 12px 28px rgb(0 8 36 / .16); }.card:hover::after { opacity:1; transform:translateX(42%) rotate(18deg); } }
@@ -218,10 +218,28 @@ body{min-width:320px}.main{padding:clamp(28px,4vw,52px) var(--page-gutter) 52px;
 
 /* Tarjetas de equipo compactas, con toda la información en una misma fila. */
 .team-card { flex-direction:row; align-items:center; min-height:112px; }
+
+/* Error visible y accesible en login y registro. */
+.auth-error {
+  display:flex;
+  align-items:flex-start;
+  gap:11px;
+  padding:13px 14px;
+  border:1px solid color-mix(in srgb,var(--danger) 42%,var(--border));
+  border-radius:12px;
+  background:color-mix(in srgb,var(--danger) 9%,var(--card));
+  color:var(--danger);
+  animation:rise-in .22s ease both;
+}
+.auth-error > .material-symbols-rounded { flex:0 0 auto; margin-top:1px; font-size:21px; }
+.auth-error > div { display:grid; gap:3px; }
+.auth-error strong { font-size:14px; line-height:1.3; }
+.auth-error span { font-size:13px; line-height:1.45; color:color-mix(in srgb,var(--danger) 82%,var(--text)); }
 .team-card .team-mark { flex:0 0 auto; }
 .team-card > div:not(.team-mark) { flex:1; min-width:0; }
 .team-card footer { flex:0 0 auto; margin:0 0 0 auto; white-space:nowrap; }
-@media (max-width:420px) { .team-card { min-height:104px; padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal; text-align:right; line-height:1.25; } }
+@media (max-width:420px) { .team-card { min-height:104px; 
+padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal; text-align:right; line-height:1.25; } }
 
 .date-badge,.date-badge b { color:#fff; }
 

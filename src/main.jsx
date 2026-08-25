@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '../styles.css';
 import { AccountWorkspace, PlayerWorkspace, StaffWorkspace, TeamWorkspace } from './operations.jsx';
 import LineWaves from './LineWaves.jsx';
+import { userFacingAuthError } from './authErrors.js';
 
 const configuredApi = import.meta.env.VITE_API_URL;
 const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api' || configuredApi === 'https://backend-ios-nu.vercel.app'))
@@ -72,7 +73,13 @@ function App() {
         logout(); throw new Error('Tu sesión venció. Iniciá sesión nuevamente.');
       }
     }
-    if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || 'Ocurrió un error.'); }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const requestError = new Error(data.message || 'Ocurrió un error.');
+      requestError.code = data.error;
+      requestError.status = response.status;
+      throw requestError;
+    }
     return response.status === 204 ? null : response.json();
   }
   if (session === undefined) return <><div className="app-line-waves"><LineWaves /></div><Loading /></>;
@@ -91,9 +98,22 @@ function App() {
 }
 
 function Auth({ api, save }) {
-  const [register, setRegister] = useState(false), [error, setError] = useState(''), [modal, setModal] = useState('');
-  async function submit(event) { event.preventDefault(); setError(''); try { save(await api(register ? '/auth/register' : '/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) })); } catch (err) { setError(err.message); } }
-  return <main className="auth-shell"><div className="auth-content"><header className="brand-header"><div className="brand-icon"><Icon filled>sports_basketball</Icon></div><h1>{register ? 'Creá tu cuenta' : 'BasketStaff'}</h1><p className="subtitle">{register ? 'Unite a la comunidad de entrenadores.' : 'Bienvenido de nuevo'}</p></header><form className="card form-card" onSubmit={submit}>{register && <><Field title="NOMBRE COMPLETO"><input required name="name" placeholder="Ej. Carlos Martínez" /></Field><Field title="NOMBRE DE LA COMPAÑÍA"><input required name="organizationName" placeholder="Ej. Club Central" /></Field></>}<Field title="CORREO ELECTRÓNICO"><input required type="email" name="email" placeholder="entrenador@equipo.com" /></Field><Field title="CONTRASEÑA"><input required minLength="10" type="password" name="password" placeholder="••••••••" /></Field>{!register && <button className="link-button" type="button" onClick={() => setModal('recover')}>¿Olvidaste tu contraseña?</button>}{error && <p className="error">{error}</p>}<button className="primary">{register ? 'Crear cuenta' : 'Iniciar sesión'}</button></form><div className="auth-actions"><button className="link-button" onClick={() => setRegister(!register)}>{register ? '¿Ya tenés una cuenta? Iniciá sesión' : '¿No tenés una cuenta? Crear cuenta'}</button><button className="link-button" onClick={() => setModal('invite')}>Tengo una invitación</button></div></div>{modal === 'recover' && <Recover api={api} close={() => setModal('')} />}{modal === 'invite' && <Invite api={api} save={save} close={() => setModal('')} />}</main>;
+  const [register, setRegister] = useState(false), [error, setError] = useState(''), [busy, setBusy] = useState(false), [modal, setModal] = useState('');
+  async function submit(event) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      save(await api(register ? '/auth/register' : '/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }));
+    } catch (err) {
+      setError(userFacingAuthError(err, register ? 'register' : 'login'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const changeMode = () => { setRegister(value => !value); setError(''); };
+  return <main className="auth-shell"><div className="auth-content"><header className="brand-header"><div className="brand-icon"><Icon filled>sports_basketball</Icon></div><h1>{register ? 'Creá tu cuenta' : 'BasketStaff'}</h1><p className="subtitle">{register ? 'Unite a la comunidad de entrenadores.' : 'Bienvenido de nuevo'}</p></header><form className="card form-card" onSubmit={submit}>{register && <><Field title="NOMBRE COMPLETO"><input required name="name" minLength="2" placeholder="Ej. Carlos Martínez" autoComplete="name" /></Field><Field title="NOMBRE DE LA COMPAÑÍA"><input required name="organizationName" minLength="2" placeholder="Ej. Club Central" autoComplete="organization" /></Field></>}<Field title="CORREO ELECTRÓNICO"><input required type="email" name="email" placeholder="entrenador@equipo.com" autoComplete="email" /></Field><Field title="CONTRASEÑA"><input required minLength="10" type="password" name="password" placeholder="••••••••" autoComplete={register ? 'new-password' : 'current-password'} /></Field>{!register && <button className="link-button" type="button" onClick={() => setModal('recover')}>¿Olvidaste tu contraseña?</button>}{error && <div className="auth-error" role="alert" aria-live="assertive"><Icon>error</Icon><div><strong>{register ? 'No pudimos crear la cuenta' : 'No pudimos iniciar sesión'}</strong><span>{error}</span></div></div>}<button className="primary" disabled={busy} aria-busy={busy}>{busy ? (register ? 'Creando cuenta…' : 'Ingresando…') : (register ? 'Crear cuenta' : 'Iniciar sesión')}</button></form><div className="auth-actions"><button className="link-button" type="button" onClick={changeMode}>{register ? '¿Ya tenés una cuenta? Iniciá sesión' : '¿No tenés una cuenta? Crear cuenta'}</button><button className="link-button" type="button" onClick={() => setModal('invite')}>Tengo una invitación</button></div></div>{modal === 'recover' && <Recover api={api} close={() => setModal('')} />}{modal === 'invite' && <Invite api={api} save={save} close={() => setModal('')} />}</main>;
 }
 
 function Shell({ user, page, setPage, logout, children }) { const [mobileMenuOpen, setMobileMenuOpen] = useState(false); const nav = [['inicio', 'home', 'Inicio'], ['equipos', 'groups', 'Equipos'], ['jugadores', 'person_search', 'Jugadores']]; if (['DIRECTOR', 'SUBDIRECTOR'].includes(user.role)) nav.push(['personal', 'manage_accounts', 'Personal'], ['actividad', 'history', 'Actividad']); nav.push(['perfil', 'account_circle', 'Perfil']); const closeMobileMenu = () => setMobileMenuOpen(false); const signOut = () => { closeMobileMenu(); logout(); }; return <div className="app-shell"><aside className="sidebar"><div className="sidebar-brand"><span><Icon filled>sports_basketball</Icon></span> BasketStaff</div><nav className="nav">{nav.map(([key, icon, label]) => <button key={key} className={page === key ? 'active' : ''} onClick={() => setPage(key)}><i className="nav-icon"><Icon filled={page === key}>{icon}</Icon></i>{label}</button>)}</nav><div className="user-chip"><div className="avatar">{initials(user.name)}</div><div><strong>{user.name}</strong><small>{role[user.role]}</small></div><button className="signout" title="Cerrar sesión" onClick={logout}><Icon>logout</Icon></button></div></aside><main className="main"><header className="mobile-topbar"><div className="sidebar-brand"><span><Icon filled>sports_basketball</Icon></span> BasketStaff</div><div className="mobile-user-menu"><button className="avatar mobile-avatar-button" type="button" aria-label="Abrir menú de usuario" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(value => !value)}>{initials(user.name)}</button>{mobileMenuOpen && <div className="mobile-user-dropdown"><span className="mobile-user-name">{user.name}</span><button type="button" onClick={signOut}><Icon>logout</Icon> Cerrar sesión</button></div>}</div></header>{children}</main></div>; }
