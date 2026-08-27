@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../styles.css';
 import { AccountWorkspace, PlayerWorkspace, StaffWorkspace, TeamWorkspace } from './operations.jsx';
@@ -6,6 +6,7 @@ import LineWaves from './LineWaves.jsx';
 import { userFacingAuthError } from './authErrors.js';
 import StrokeText from './StrokeText.jsx';
 import BlurText from './BlurText.jsx';
+import { apiErrorMessage } from './apiErrors.js';
 
 const configuredApi = import.meta.env.VITE_API_URL;
 const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api' || configuredApi === 'https://backend-ios-nu.vercel.app'))
@@ -41,10 +42,25 @@ function useRoute() {
 function App() {
   const [session, setSession] = useState(undefined);
   const { route, navigate } = useRoute();
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
   const save = data => { localStorage.removeItem(SESSION); setSession(data); };
   const logout = () => { localStorage.removeItem(SESSION); setSession(null); navigate('/login', { replace: true }); };
-  const notify = text => { setToast(text); setTimeout(() => setToast(''), 3000); };
+  const notify = (text, type = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ text, type });
+    toastTimer.current = setTimeout(() => setToast(null), type === 'error' ? 6000 : 3000);
+  };
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+  useEffect(() => {
+    const handleUnhandled = event => {
+      if (event.reason?.reportedToUser) return;
+      const message = event.reason?.message || 'Ocurrió un error inesperado al realizar la acción.';
+      notify(message, 'error');
+    };
+    window.addEventListener('unhandledrejection', handleUnhandled);
+    return () => window.removeEventListener('unhandledrejection', handleUnhandled);
+  }, []);
   useEffect(() => {
     let active = true;
     let legacyRefreshToken;
@@ -67,7 +83,15 @@ function App() {
     const headers = { Accept: 'application/json', 'X-Client-Platform': 'web', ...(options.body ? { 'Content-Type': 'application/json' } : {}) };
     if (session?.token) headers.Authorization = `Bearer ${session.token}`;
     let response;
-    try { response = await fetch(`${API}${path}`, { ...options, credentials: 'include', headers }); } catch { throw new Error('No se pudo conectar con la API. Revisá la URL configurada.'); }
+    try {
+      response = await fetch(`${API}${path}`, { ...options, credentials: 'include', headers });
+    } catch {
+      const connectionError = new Error('No se pudo conectar con la API. Revisá tu conexión e intentá nuevamente.');
+      connectionError.code = 'NETWORK_ERROR';
+      connectionError.reportedToUser = true;
+      notify(connectionError.message, 'error');
+      throw connectionError;
+    }
     if (response.status === 401 && retry && session) {
       const refresh = await fetch(`${API}/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'web' }, body: '{}' });
       if (refresh.ok) {
@@ -80,15 +104,17 @@ function App() {
     }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      const requestError = new Error(data.message || 'Ocurrió un error.');
+      const requestError = new Error(apiErrorMessage(data, response.status));
       requestError.code = data.error;
       requestError.status = response.status;
+      requestError.reportedToUser = true;
+      notify(requestError.message, 'error');
       throw requestError;
     }
     return response.status === 204 ? null : response.json();
   }
   if (session === undefined) return <><div className="app-line-waves"><LineWaves /></div><Loading /></>;
-  if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} register={route.page === 'register'} navigate={navigate} /><Toast text={toast} /></>;
+  if (!session) return <><div className="app-line-waves"><LineWaves /></div><Auth api={api} save={save} register={route.page === 'register'} navigate={navigate} /><Toast notice={toast} /></>;
   const handleSignOut = async () => { try { await api('/auth/logout', { method: 'POST', body: '{}' }); } finally { logout(); } };
   const page = route.page === 'inicio' ? 'inicio' : route.page;
   const pagePath = key => key === 'inicio' ? '/' : `/${key}`;
@@ -99,7 +125,7 @@ function App() {
     {page === 'personal' && <StaffWorkspace api={api} notify={notify} canInvite={session.user.role === 'DIRECTOR'} currentUserId={session.user.id} />}
     {page === 'actividad' && <Directory api={api} kind="activity" />}
     {page === 'perfil' && <AccountWorkspace api={api} user={session.user} signOut={logout} />}
-  </Shell><Toast text={toast} /></>;
+  </Shell><Toast notice={toast} /></>;
 }
 
 function Auth({ api, save, register, navigate }) {
@@ -218,5 +244,15 @@ function NewTeam({ api, close, done }) { const [categories, setCategories] = use
 function NewPlayer({ api, teams, close, done }) { return <Modal title="Crear jugador" close={close}><Form fields={[["NOMBRE COMPLETO", 'name'], ['FECHA DE NACIMIENTO', 'birthDate', 'date'], ['EQUIPOS (OPCIONAL)', 'teamIds', 'multi', teams]]} button="Crear jugador" submit={async (data, form) => { data.teamIds = [...form.elements.teamIds.selectedOptions].map(x => x.value); await api('/players', { method: 'POST', body: JSON.stringify(data) }); close(); done(); }} /></Modal>; }
 function Birthdays({ api, close }) { const [items, setItems] = useState(); useEffect(() => { api('/birthdays?days=30').then(setItems); }, []); return <Modal title="Próximos cumpleaños" close={close}>{!items ? <Loading /> : <div className="list">{items.map(b => { const d = new Date(b.nextBirthday); return <article className="card event" key={b.id}><div className="date-badge"><b>{d.getUTCDate()}</b>{d.toLocaleDateString('es-AR', { month: 'short', timeZone: 'UTC' }).toUpperCase()}</div><div className="event-content"><strong>{b.name}</strong><span>{b.daysUntil === 0 ? `Cumple hoy · ${b.turningAge} años` : `En ${b.daysUntil} días · cumple ${b.turningAge}`}</span></div></article>; })}</div>}</Modal>; }
 function Event({ event }) { const d = new Date(event.startsAt); return <article className="card event"><div className="date-badge"><b>{d.getDate()}</b>{d.toLocaleDateString('es-AR', { month: 'short' }).toUpperCase()}</div><div className="event-content"><strong>{event.title}</strong><span className="role-label">{event.teamName}</span><span>{d.toLocaleString('es-AR')}</span></div><span className="chevron">›</span></article>; }
-function Loading({ rows = 4 }) { return <section className="skeleton-page" aria-busy="true" aria-label="Cargando contenido"><div className="skeleton skeleton-kicker" /><div className="skeleton skeleton-title" /><div className="skeleton skeleton-subtitle" /><div className="skeleton-list">{Array.from({ length: rows }, (_, index) => <div className="card skeleton-card" key={index}><div className="skeleton skeleton-avatar" /><div className="skeleton-card-copy"><div className="skeleton skeleton-line skeleton-line-long" /><div className="skeleton skeleton-line skeleton-line-short" /></div></div>)}</div><span className="sr-only">Cargando contenido</span></section>; } function Empty({ children }) { return <div className="card empty"><BlurText text={children} delay={45} /></div>; } function Error({ message }) { return <Header eyebrow="BASKETSTAFF" title="No pudimos cargar esta vista" text={message} />; } function Toast({ text }) { return text ? <div className="toast"><BlurText text={text} delay={35} /></div> : null; }
-createRoot(document.getElementById('app')).render(<App />);
+function Loading({ rows = 4 }) { return <section className="skeleton-page" aria-busy="true" aria-label="Cargando contenido"><div className="skeleton skeleton-kicker" /><div className="skeleton skeleton-title" /><div className="skeleton skeleton-subtitle" /><div className="skeleton-list">{Array.from({ length: rows }, (_, index) => <div className="card skeleton-card" key={index}><div className="skeleton skeleton-avatar" /><div className="skeleton-card-copy"><div className="skeleton skeleton-line skeleton-line-long" /><div className="skeleton skeleton-line skeleton-line-short" /></div></div>)}</div><span className="sr-only">Cargando contenido</span></section>; } function Empty({ children }) { return <div className="card empty"><BlurText text={children} delay={45} /></div>; } function Error({ message }) { return <Header eyebrow="BASKETSTAFF" title="No pudimos cargar esta vista" text={message} />; } function Toast({ notice }) { return notice ? <div className={`toast toast-${notice.type}`} role={notice.type === 'error' ? 'alert' : 'status'} aria-live={notice.type === 'error' ? 'assertive' : 'polite'}><Icon>{notice.type === 'error' ? 'error' : 'check_circle'}</Icon><span><strong>{notice.type === 'error' ? 'No pudimos completar la acción' : 'Acción completada'}</strong><BlurText text={notice.text} delay={35} /></span></div> : null; }
+
+class AppErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  render() {
+    if (!this.state.error) return this.props.children;
+    return <main className="fatal-error"><div className="card"><Icon>error</Icon><h1>La interfaz encontró un problema</h1><p>No se perdió la información guardada. Recargá la página para continuar.</p><button className="primary" onClick={() => window.location.reload()}>Recargar BasketStaff</button></div></main>;
+  }
+}
+
+createRoot(document.getElementById('app')).render(<AppErrorBoundary><App /></AppErrorBoundary>);
