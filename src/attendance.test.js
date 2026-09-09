@@ -46,7 +46,7 @@ test('returns the existing day as a warning after ATTENDANCE_EXISTS', async () =
   ]);
 });
 
-test('does not overwrite attendance linked to another event', async () => {
+test('does not reuse attendance from another event on the same day', async () => {
   const api = async path => {
     if (path === '/teams/team-1/attendance') throw existingError();
     return [{ id: 'attendance-1', date: '2026-08-27T00:00:00.000Z', eventId: 'event-other' }];
@@ -60,7 +60,7 @@ test('does not overwrite attendance linked to another event', async () => {
       date: '2026-08-27',
       records: [{ playerId: 'player-1', status: 'PRESENT' }]
     }),
-    error => error.code === 'ATTENDANCE_EXISTS' && error.linkedToAnotherEvent === true
+    error => error.code === 'ATTENDANCE_EXISTS' && !error.existingAttendance
   );
 });
 

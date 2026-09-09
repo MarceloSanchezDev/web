@@ -23,7 +23,7 @@ export async function saveAttendance({ api, teamId, sessionId, eventId, date, re
 
     const queryDate = encodeURIComponent(attendanceDay(date));
     const sessions = await api(`/teams/${teamId}/attendance?from=${queryDate}&to=${queryDate}`);
-    const existing = sessions.find(item => attendanceDay(item.date) === attendanceDay(date));
+    const existing = sessions.find(item => attendanceDay(item.date) === attendanceDay(date) && (eventId ? item.eventId === eventId : !item.eventId));
     if (!existing) throw error;
 
     const conflict = new Error(
