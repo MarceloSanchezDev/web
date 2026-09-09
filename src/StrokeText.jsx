@@ -9,8 +9,8 @@ const easeMap = {
 
 export default function StrokeText({
   text,
-  strokeColor = '#A78BFA',
-  fillColor = '#F8FAFC',
+  strokeColor = '#194ade',
+  fillColor = '#000000',
   strokeWidth = 1,
   drawDuration = 1,
   fillDelay = 0.1,
