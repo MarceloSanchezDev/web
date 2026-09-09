@@ -1,5 +1,11 @@
 const attendanceDay = value => new Date(value).toISOString().slice(0, 10);
 
+export function eligiblePhysicalAttendanceEvents(events, now = new Date()) {
+  return events
+    .filter(event => event.type === 'PHYSICAL_TRAINING' && new Date(event.startsAt) <= now && !event.attendanceSession)
+    .sort((left, right) => new Date(right.startsAt) - new Date(left.startsAt));
+}
+
 export async function saveAttendance({ api, teamId, sessionId, eventId, date, records }) {
   const body = { records, ...(eventId ? { eventId } : {}) };
 

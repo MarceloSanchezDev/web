@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { saveAttendance } from './attendance.js';
+import { eligiblePhysicalAttendanceEvents, saveAttendance } from './attendance.js';
 
 const existingError = () => Object.assign(new Error('Ya existe una asistencia para esa fecha'), {
   code: 'ATTENDANCE_EXISTS',
@@ -82,4 +82,17 @@ test('updates a known attendance session directly', async () => {
   assert.equal(result.updatedExisting, true);
   assert.equal(calls[0][0], '/attendance/attendance-1');
   assert.equal(calls[0][1].method, 'PUT');
+});
+
+test('offers only started physical trainings without attendance', () => {
+  const events = [
+    { id: 'sport', type: 'TRAINING', startsAt: '2026-09-09T10:00:00Z' },
+    { id: 'future', type: 'PHYSICAL_TRAINING', startsAt: '2026-09-10T10:00:00Z' },
+    { id: 'complete', type: 'PHYSICAL_TRAINING', startsAt: '2026-09-09T09:00:00Z', attendanceSession: { id: 'a1' } },
+    { id: 'ready', type: 'PHYSICAL_TRAINING', startsAt: '2026-09-09T10:00:00Z' }
+  ];
+  assert.deepEqual(
+    eligiblePhysicalAttendanceEvents(events, new Date('2026-09-09T12:00:00Z')).map(event => event.id),
+    ['ready']
+  );
 });
