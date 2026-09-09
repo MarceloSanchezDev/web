@@ -7,6 +7,8 @@ import { userFacingAuthError } from './authErrors.js';
 import StrokeText from './StrokeText.jsx';
 import BlurText from './BlurText.jsx';
 import { apiErrorMessage } from './apiErrors.js';
+import CountUp from './CountUp.jsx';
+import { buildCoachDashboard } from './coachDashboard.js';
 
 const configuredApi = import.meta.env.VITE_API_URL;
 const API = ((import.meta.env.PROD && (!configuredApi || configuredApi === '/api' || configuredApi === 'https://backend-ios-nu.vercel.app'))
@@ -155,7 +157,25 @@ function Home({ api, user, navigate }) {
   useEffect(() => { (async () => { try {
     if (user.role === 'MONITOR') return setData({ monitor: await api('/entry-context') });
     const [teams, players, activity] = await Promise.all([api('/teams'), api('/players'), ['DIRECTOR', 'SUBDIRECTOR'].includes(user.role) ? api('/audit-logs?limit=4').catch(() => []) : Promise.resolve([])]);
-    const info = await Promise.all(teams.map(async team => ({ team, events: await api(`/teams/${team.id}/events`).catch(() => []) })));
+    const isCoach = user.role === 'COACH';
+    const year = new Date().getFullYear();
+    const coachEventRange = `?from=${encodeURIComponent(`${year}-01-01`)}&to=${encodeURIComponent(`${year + 1}-01-01`)}`;
+    const loadEvents = async team => {
+      if (isCoach && !team.canWrite) return [];
+      if (!isCoach) return api(`/teams/${team.id}/events`).catch(() => []);
+      const [yearEvents, upcomingEvents] = await Promise.all([
+        api(`/teams/${team.id}/events${coachEventRange}`).catch(() => []),
+        api(`/teams/${team.id}/events`).catch(() => [])
+      ]);
+      return [...new Map([...yearEvents, ...upcomingEvents].map(event => [event.id, event])).values()];
+    };
+    const info = await Promise.all(teams.map(async team => ({
+      team,
+      events: await loadEvents(team),
+      statistics: isCoach && team.canWrite
+        ? await api(`/teams/${team.id}/statistics?months=12`).catch(() => null)
+        : null
+    })));
     setData({ info, players, activity });
   } catch (err) { setError(err.message); } })(); }, []);
   if (error) return <Error message={error} />;
@@ -176,14 +196,13 @@ function Home({ api, user, navigate }) {
 }
 
 function CoachHome({ data, user, navigate }) {
-  const now = new Date();
   const assigned = data.info.filter(({ team }) => team.canWrite === true);
-  const teamIds = new Set(assigned.map(({ team }) => team.id));
-  const players = data.players.filter(player => player.teams.some(membership => teamIds.has(membership.teamId)));
-  const trainings = assigned.flatMap(({ team, events }) => events.filter(event => (event.type || 'TRAINING') === 'TRAINING' && new Date(event.startsAt) >= now).map(event => ({ ...event, teamName: team.name, teamId: team.id }))).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
-  const matches = assigned.flatMap(({ events }) => events.filter(event => event.type === 'MATCH' && new Date(event.startsAt) >= now)).length;
-  const firstTeam = assigned[0]?.team;
-  return <><Welcome user={user} title="Tus equipos hoy" /><section className="home-pending role-metrics">{[["groups", assigned.length, "Equipos asignados", "Equipos que podés gestionar"], ["group", players.length, "Jugadores", "Plantel de tus equipos"], ["fitness_center", trainings.length, "Entrenamientos próximos", "De tus equipos asignados"], ["sports_basketball", matches, "Partidos próximos", "Agenda competitiva"]].map(([icon, amount, title, description]) => <article className="card pending-card" key={title}><Icon>{icon}</Icon><div><strong>{amount}</strong><span>{title}</span><small>{description}</small></div></article>)}</section><p className="section eyebrow">ACCIONES CON TUS EQUIPOS</p><section className="home-quick-actions">{firstTeam && <button className="card quick-action" onClick={() => navigate(`/equipos/${firstTeam.id}/asistencia`)}><Icon>fact_check</Icon><span><strong>Tomar asistencia</strong><small>{firstTeam.name}</small></span></button>}{firstTeam && <button className="card quick-action" onClick={() => navigate(`/equipos/${firstTeam.id}/agenda`)}><Icon>calendar_month</Icon><span><strong>Agenda</strong><small>Entrenamientos y partidos</small></span></button>}<button className="card quick-action" onClick={() => navigate('/jugadores')}><Icon>groups</Icon><span><strong>Jugadores</strong><small>Ver fichas del plantel</small></span></button><button className="card quick-action" onClick={() => navigate('/equipos')}><Icon>sports</Icon><span><strong>Todos mis equipos</strong><small>Gestión deportiva</small></span></button></section><p className="section eyebrow">PRÓXIMOS ENTRENAMIENTOS</p><section className="card home-today">{trainings.length ? trainings.slice(0, 5).map(event => <HomeEvent event={event} key={event.id} />) : <div className="home-empty"><Icon>event_available</Icon><span><strong>No hay entrenamientos próximos</strong><small>Podés agregar uno desde la agenda de un equipo.</small></span></div>}</section><p className="section eyebrow">MIS EQUIPOS ASIGNADOS</p><div className="home-teams coach-teams">{assigned.length ? assigned.map(({ team, events }) => { const nextTraining = events.filter(event => (event.type || 'TRAINING') === 'TRAINING' && new Date(event.startsAt) >= now).sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt))[0]; return <article className="card coach-team-card" key={team.id}><button className="coach-team-main" onClick={() => navigate(`/equipos/${team.id}`)}><div className="team-mark"><Icon>groups</Icon></div><span><strong>{team.name}</strong><small>{team._count.players} jugadores · {nextTraining ? `Próximo entrenamiento ${new Date(nextTraining.startsAt).toLocaleDateString('es-AR', { day:'2-digit', month:'short' })}` : 'Sin entrenamiento próximo'}</small></span><Icon>chevron_right</Icon></button><div className="coach-team-actions"><button onClick={() => navigate(`/equipos/${team.id}/asistencia`)}><Icon>fact_check</Icon> Asistencia</button><button onClick={() => navigate(`/equipos/${team.id}/agenda`)}><Icon>calendar_month</Icon> Agenda</button><button onClick={() => navigate(`/equipos/${team.id}/plantel`)}><Icon>group</Icon> Plantel</button></div></article>; }) : <Empty>No tenés equipos asignados todavía.</Empty>}</div></>;
+  const [selectedTeamId, setSelectedTeamId] = useState(assigned[0]?.team.id || '');
+  const dashboard = buildCoachDashboard(data, new Date(), selectedTeamId);
+  const next = dashboard.nextTraining;
+  const nextDate = next ? new Date(next.startsAt) : null;
+  const metrics = [['group', dashboard.activePlayers, '', 'Jugadores activos'], ['trending_up', dashboard.attendanceRate, '%', 'Asistencia'], ['calendar_month', dashboard.trainingCount, '', 'Entrenamientos']];
+  return <><Welcome user={user} title="Resumen de tu equipo" /><section className="coach-dashboard" aria-label="Resumen del entrenador">{dashboard.assignedTeams.length > 0 && <label className="card coach-team-selector"><div className="coach-team-mark"><Icon>sports_basketball</Icon></div><span><small>EQUIPO SELECCIONADO</small><strong>{dashboard.selectedTeam?.name}</strong></span>{dashboard.assignedTeams.length > 1 ? <select aria-label="Seleccionar equipo" value={dashboard.selectedTeam?.id || ''} onChange={event => setSelectedTeamId(event.target.value)}>{dashboard.assignedTeams.map(team => <option value={team.id} key={team.id}>{team.name}</option>)}</select> : <Icon>groups</Icon>}</label>}<div className="coach-dashboard-bento"><div>{next ? <section className="coach-next-training" aria-label="Próximo entrenamiento"><span className="coach-next-label">Próximo entrenamiento</span><div className="coach-next-head"><div className="coach-training-info"><strong>{next.title}</strong><small><Icon>groups</Icon> {next.teamName}</small></div><div className="coach-training-time"><span>{nextDate.toDateString() === new Date().toDateString() ? 'HOY' : nextDate.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }).replace('.', '').toUpperCase()}</span><strong>{nextDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</strong></div></div><button onClick={() => navigate(`/equipos/${next.teamId}/agenda`)}>Ver detalle</button></section> : <section className="coach-next-training coach-next-empty"><span className="coach-next-label">Próximo entrenamiento</span><div className="coach-training-info"><strong>Sin próximos entrenamientos</strong><small>Este equipo todavía no tiene otro entrenamiento programado.</small></div><button onClick={() => dashboard.selectedTeam && navigate(`/equipos/${dashboard.selectedTeam.id}/agenda`)}>Ir a la agenda</button></section>}</div><section className="coach-dashboard-metrics" aria-label="Métricas del equipo">{metrics.map(([icon, value, suffix, title], index) => <article className="card coach-dashboard-metric" key={title}><span>{title}</span><div><strong><CountUp from={0} to={value} suffix={suffix} duration={1} delay={index * 0.08} /></strong><Icon>{icon}</Icon></div></article>)}</section></div>{!dashboard.selectedTeam && <div className="card empty">No tenés equipos asignados todavía.</div>}</section></>;
 }
 
 const physicalFields = [['heightCm', 'altura'], ['weightKg', 'peso'], ['speedKmh', 'velocidad'], ['physicalPerformance', 'desempeño']];

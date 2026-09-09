@@ -487,6 +487,41 @@ padding:14px; gap:11px; }.team-card footer { max-width:70px; white-space:normal;
 @media(max-width:900px) { .home-quick-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }.home-pending { grid-template-columns:1fr; }.pending-card { min-height:82px; }.home-teams { grid-template-columns:1fr; } }
 @media(max-width:480px) { .home-quick-actions { grid-template-columns:1fr; }.quick-action { min-height:70px; }.home-event { align-items:flex-start; }.event-kind { padding-top:3px; }.home-today,.home-activity,.physical-priority { padding:16px; }.physical-progress>div:first-child { display:grid; gap:4px; }.coach-team-main { padding:14px; }.coach-team-actions button { flex-basis:90px; } }
 
+/* Inicio del entrenador basado en el tablero de Stitch. */
+.coach-dashboard { display:grid; gap:24px; width:min(100%,1080px); }
+.coach-team-selector { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px; width:100%; min-height:82px; padding:15px 18px; }
+.coach-team-mark { display:grid; place-items:center; width:48px; height:48px; border:1px solid color-mix(in srgb,var(--brand) 20%,var(--border)); border-radius:50%; background:color-mix(in srgb,var(--brand) 9%,var(--card)); color:var(--brand); }
+.coach-team-selector>span { display:grid; min-width:0; gap:3px; }
+.coach-team-selector small { color:var(--muted); font-size:10px; font-weight:750; letter-spacing:.07em; }
+.coach-team-selector strong { overflow:hidden; color:var(--text); font-size:17px; text-overflow:ellipsis; white-space:nowrap; }
+.coach-team-selector select { max-width:220px; min-height:42px; padding:0 34px 0 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-low); color:var(--text); }
+.coach-team-selector>.material-symbols-rounded { color:var(--accent); }
+.coach-dashboard-bento { display:grid; grid-template-columns:minmax(0,7fr) minmax(280px,5fr); align-items:stretch; gap:24px; }
+.coach-dashboard-bento>div { display:flex; min-width:0; }
+.coach-next-training { position:relative; isolation:isolate; display:flex; flex:1; flex-direction:column; justify-content:space-between; gap:26px; min-height:300px; overflow:hidden; padding:26px; border-radius:24px; background:#1e3a8a; color:#fff; box-shadow:0 8px 24px rgb(30 58 138 / .2); }
+.coach-next-training::after { content:""; position:absolute; z-index:-1; top:-110px; right:-70px; width:280px; height:280px; border-radius:50%; background:rgb(255 255 255 / .08); filter:blur(20px); }
+.coach-next-label { align-self:flex-start; padding:6px 12px; border:1px solid rgb(255 255 255 / .12); border-radius:999px; background:rgb(255 255 255 / .18); color:#fff; font-size:11px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+.coach-next-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+.coach-training-info { display:grid; min-width:0; gap:7px; }
+.coach-training-info>strong { overflow-wrap:anywhere; color:inherit; font-size:clamp(22px,2.6vw,30px); line-height:1.16; }
+.coach-training-info>small { display:flex; align-items:center; gap:6px; color:rgb(255 255 255 / .8); font-size:15px; line-height:1.4; }
+.coach-training-info>small>.material-symbols-rounded { font-size:18px; }
+.coach-training-time { display:grid; flex:0 0 auto; min-width:82px; gap:4px; padding:12px; border-radius:14px; background:#fff; color:#1e3a8a; text-align:center; box-shadow:0 2px 8px rgb(15 23 42 / .12); }
+.coach-training-time span { color:#64748b; font-size:10px; font-weight:750; letter-spacing:.06em; }
+.coach-training-time strong { color:#1e3a8a; font-size:17px; }
+.coach-next-training>button { min-height:48px; border:0; border-radius:12px; background:#fff; color:#1e3a8a; font:inherit; font-weight:750; transition:transform .18s ease,background .18s ease; }
+.coach-next-training>button:hover { background:#f8fafc; transform:scale(.985); }
+.coach-next-empty .coach-training-info { margin-block:auto; }
+.coach-dashboard-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; min-width:0; }
+.coach-dashboard-metric { display:flex; flex-direction:column; justify-content:space-between; gap:14px; min-width:0; min-height:142px; padding:18px; }
+.coach-dashboard-metric:last-child { grid-column:1/-1; }
+.coach-dashboard-metric>span { color:var(--muted); font-size:11px; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+.coach-dashboard-metric>div { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+.coach-dashboard-metric strong { color:var(--text); font-size:30px; line-height:1; }
+.coach-dashboard-metric .material-symbols-rounded { color:var(--accent); font-size:21px; }
+@media(max-width:900px) { .coach-dashboard-bento { grid-template-columns:1fr; }.coach-next-training { min-height:270px; }.coach-dashboard-metric { min-height:118px; } }
+@media(max-width:520px) { .coach-dashboard { gap:16px; }.coach-team-selector { gap:11px; padding:13px; }.coach-team-mark { width:42px; height:42px; }.coach-team-selector select { width:min(34vw,120px); padding-left:9px; font-size:12px; }.coach-dashboard-bento { gap:16px; }.coach-next-training { min-height:255px; padding:20px; border-radius:20px; }.coach-next-head { gap:12px; }.coach-training-info>strong { font-size:21px; }.coach-training-info>small { font-size:13px; }.coach-training-time { min-width:72px; padding:10px 8px; }.coach-dashboard-metrics { gap:10px; }.coach-dashboard-metric { min-height:112px; padding:15px; }.coach-dashboard-metric strong { font-size:27px; } }
+
 .mobile-user-menu { display:none; }
 @media(max-width:720px) {
   .mobile-user-menu { display:block; position:relative; }
